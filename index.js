@@ -151,12 +151,20 @@ const gameController = (function () {
     });
   }
 
+  function restartGame() {
+    startGame();
+  }
+
   return {
     startGame,
+    restartGame,
   };
 })();
 
 // Start the game
 document.addEventListener("DOMContentLoaded", () => {
   gameController.startGame();
+  document
+    .getElementById("restart-button")
+    .addEventListener("click", gameController.restartGame);
 });
