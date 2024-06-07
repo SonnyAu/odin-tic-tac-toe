@@ -9,15 +9,37 @@ const gameboard = (function () {
     console.log(board.map((row) => row.join(" | ")).join("\n---------\n"));
   }
 
-  function updateBoard(user, userMove) {
-    const { row, col } = userMove;
+  function updateBoard(userSymbol, userMove) {
+    const { col, row } = userMove;
     if (board[row][col] === "") {
-      board[row][col] = user;
+      // Update to row and col
+      board[row][col] = userSymbol;
       return true;
     } else {
       console.log("Cell already occupied! Choose a different move.");
       return false;
     }
+  }
+
+  function checkWin(userSymbol, { row, col }) {
+    // Check row
+    if (board[row].every((cell) => cell === userSymbol)) return true;
+
+    // Check column
+    if (board.every((r) => r[col] === userSymbol)) return true;
+
+    // Check diagonal (top-left to bottom-right)
+    if (row === col && board.every((_, i) => board[i][i] === userSymbol))
+      return true;
+
+    // Check diagonal (top-right to bottom-left)
+    if (
+      row + col === 2 &&
+      board.every((_, i) => board[i][2 - i] === userSymbol)
+    )
+      return true;
+
+    return false;
   }
 
   function getBoard() {
@@ -37,6 +59,7 @@ const gameboard = (function () {
     displayBoard,
     getBoard,
     resetBoard,
+    checkWin,
   };
 })();
 
@@ -44,55 +67,89 @@ function player(name) {
   let wins = 0;
   let coord1 = 0;
   let coord2 = 0;
-  let moveCoords = [coord1, coord2];
+  let symbol = "";
+  let moveCoords = { col: coord1, row: coord2 }; // Update to col and row
 
   const getWins = () => wins;
   const giveWin = () => wins++;
+  const setSymbol = (playerSymbol) => {
+    symbol = playerSymbol;
+  };
   const movePrompt = () => {
-    coord1 = parseInt(prompt(`Enter your x-coordinate (0-2), ${name}: `), 10);
-    coord2 = parseInt(prompt(`Enter your y-coordinate (0-2), ${name}: `), 10);
-    moveCoords = { row: coord1, col: coord2 };
+    coord1 = parseInt(
+      prompt(`Enter your column-coordinate (0-2), ${name}: `),
+      10
+    ); // Update prompt to column-coordinate
+    coord2 = parseInt(prompt(`Enter your row-coordinate (0-2), ${name}: `), 10); // Update prompt to row-coordinate
+    moveCoords = { col: coord1, row: coord2 }; // Update to col and row
   };
   const getMoveCoords = () => moveCoords;
+  const getSymbol = () => symbol;
 
   return {
     name,
     getWins,
     giveWin,
+    setSymbol,
     movePrompt,
     getMoveCoords,
+    getSymbol,
   };
 }
 
 // Game Controller
 const gameController = (function () {
-  const player1 = player("Player 1");
-  const player2 = player("Player 2");
-  let currentPlayer = player1;
+  let player1, player2;
+  let currentPlayer;
+
+  function initializePlayers() {
+    const name1 = prompt("Enter the name of Player 1: ");
+    player1 = player(name1);
+    const symbol1 = prompt(`${name1}, type a letter to represent you: `);
+    player1.setSymbol(symbol1);
+
+    const name2 = prompt("Enter the name of Player 2: ");
+    player2 = player(name2);
+    const symbol2 = prompt(`${name2}, type a letter to represent you: `);
+    player2.setSymbol(symbol2);
+
+    currentPlayer = player1;
+  }
 
   function playRound() {
     currentPlayer.movePrompt();
     const move = currentPlayer.getMoveCoords();
-    const updated = gameboard.updateBoard(currentPlayer.name, move);
+    const updated = gameboard.updateBoard(currentPlayer.getSymbol(), move);
     if (updated) {
       gameboard.displayBoard();
-      // Check for a win condition here if needed
+      if (gameboard.checkWin(currentPlayer.getSymbol(), move)) {
+        console.log(`${currentPlayer.name} wins!`);
+        currentPlayer.giveWin();
+        return true;
+      }
       currentPlayer = currentPlayer === player1 ? player2 : player1;
     }
+    return false;
   }
 
   function startGame() {
     gameboard.resetBoard();
     gameboard.displayBoard();
+    initializePlayers();
     let rounds = 0;
     while (rounds < 9) {
-      playRound();
+      if (playRound()) break;
       rounds++;
     }
-    console.log("Game Over!");
+    if (rounds === 9) {
+      console.log("Game Over! It's a draw.");
+    }
   }
 
   return {
     startGame,
   };
 })();
+
+// Start the game
+// gameController.startGame();
