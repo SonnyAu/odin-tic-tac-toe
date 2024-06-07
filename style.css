@@ -17,6 +17,11 @@ body {
   width: 100px;
   height: 100px;
   border: 1.75px solid white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 50px;
 }
 .symbol {
   background-color: white !important;
