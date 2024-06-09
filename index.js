@@ -1,18 +1,20 @@
-const gameboard = (function () {
-  let board = [
-    ["", "", ""],
-    ["", "", ""],
-    ["", "", ""],
-  ];
-
-  function displayBoard() {
-    console.log(board.map((row) => row.join(" | ")).join("\n---------\n"));
+class Gameboard {
+  constructor() {
+    this.board = [
+      ["", "", ""],
+      ["", "", ""],
+      ["", "", ""],
+    ];
   }
 
-  function updateBoard(userSymbol, userMove) {
+  displayBoard() {
+    console.log(this.board.map((row) => row.join(" | ")).join("\n---------\n"));
+  }
+
+  updateBoard(userSymbol, userMove) {
     const { col, row } = userMove;
-    if (board[row][col] === "") {
-      board[row][col] = userSymbol;
+    if (this.board[row][col] === "") {
+      this.board[row][col] = userSymbol;
       let cell = document.querySelector(`.cell-${row}-${col}`);
       cell.textContent = userSymbol;
       return true;
@@ -22,33 +24,32 @@ const gameboard = (function () {
     }
   }
 
-  function checkWin(userSymbol, { row, col }) {
+  checkWin(userSymbol, { row, col }) {
     // Check row
-    if (board[row].every((cell) => cell === userSymbol)) return true;
+    if (this.board[row].every((cell) => cell === userSymbol)) return true;
 
     // Check column
-    if (board.every((r) => r[col] === userSymbol)) return true;
+    if (this.board.every((r) => r[col] === userSymbol)) return true;
 
     // Check diagonal (top-left to bottom-right)
-    if (row === col && board.every((_, i) => board[i][i] === userSymbol))
+    if (
+      row === col &&
+      this.board.every((_, i) => this.board[i][i] === userSymbol)
+    )
       return true;
 
     // Check diagonal (top-right to bottom-left)
     if (
       row + col === 2 &&
-      board.every((_, i) => board[i][2 - i] === userSymbol)
+      this.board.every((_, i) => this.board[i][2 - i] === userSymbol)
     )
       return true;
 
     return false;
   }
 
-  function getBoard() {
-    return board;
-  }
-
-  function resetBoard() {
-    board = [
+  resetBoard() {
+    this.board = [
       ["", "", ""],
       ["", "", ""],
       ["", "", ""],
@@ -57,114 +58,113 @@ const gameboard = (function () {
       cell.textContent = "";
     });
   }
-
-  return {
-    updateBoard,
-    displayBoard,
-    getBoard,
-    resetBoard,
-    checkWin,
-  };
-})();
-
-function player(name) {
-  let wins = 0;
-  let symbol = "";
-
-  const getWins = () => wins;
-  const giveWin = () => wins++;
-  const setSymbol = (playerSymbol) => {
-    symbol = playerSymbol;
-  };
-  const getSymbol = () => symbol;
-
-  return {
-    name,
-    getWins,
-    giveWin,
-    setSymbol,
-    getSymbol,
-  };
 }
 
-// Game Controller
-const gameController = (function () {
-  let player1, player2;
-  let currentPlayer;
-  let rounds = 0;
-
-  function initializePlayers() {
-    const name1 = prompt("Enter the name of Player 1: ");
-    player1 = player(name1);
-    const symbol1 = prompt(`${name1}, type a letter to represent you: `);
-    player1.setSymbol(symbol1);
-
-    const name2 = prompt("Enter the name of Player 2: ");
-    player2 = player(name2);
-    const symbol2 = prompt(`${name2}, type a letter to represent you: `);
-    player2.setSymbol(symbol2);
-
-    currentPlayer = player1;
+class Player {
+  constructor(name) {
+    this.name = name;
+    this.wins = 0;
+    this.symbol = "";
   }
 
-  function handleCellClick(event) {
+  getWins() {
+    return this.wins;
+  }
+
+  giveWin() {
+    this.wins++;
+  }
+
+  setSymbol(playerSymbol) {
+    this.symbol = playerSymbol;
+  }
+
+  getSymbol() {
+    return this.symbol;
+  }
+}
+
+class GameController {
+  constructor() {
+    this.player1 = null;
+    this.player2 = null;
+    this.currentPlayer = null;
+    this.rounds = 0;
+    this.gameboard = new Gameboard();
+  }
+
+  initializePlayers() {
+    const name1 = prompt("Enter the name of Player 1: ");
+    this.player1 = new Player(name1);
+    const symbol1 = prompt(`${name1}, type a letter to represent you: `);
+    this.player1.setSymbol(symbol1);
+
+    const name2 = prompt("Enter the name of Player 2: ");
+    this.player2 = new Player(name2);
+    const symbol2 = prompt(`${name2}, type a letter to represent you: `);
+    this.player2.setSymbol(symbol2);
+
+    this.currentPlayer = this.player1;
+  }
+
+  handleCellClick(event) {
     const cell = event.target;
     const row = parseInt(cell.getAttribute("data-row"));
     const col = parseInt(cell.getAttribute("data-col"));
     const move = { row, col };
 
-    const updated = gameboard.updateBoard(currentPlayer.getSymbol(), move);
+    const updated = this.gameboard.updateBoard(
+      this.currentPlayer.getSymbol(),
+      move
+    );
     if (updated) {
-      gameboard.displayBoard();
-      if (gameboard.checkWin(currentPlayer.getSymbol(), move)) {
+      this.gameboard.displayBoard();
+      if (this.gameboard.checkWin(this.currentPlayer.getSymbol(), move)) {
         setTimeout(() => {
-          alert(`${currentPlayer.name} wins!`);
-          console.log(`${currentPlayer.name} wins!`);
+          alert(`${this.currentPlayer.name} wins!`);
+          console.log(`${this.currentPlayer.name} wins!`);
         }, 0);
-        currentPlayer.giveWin();
+        this.currentPlayer.giveWin();
         document.querySelectorAll(".game-cell").forEach((cell) => {
-          cell.removeEventListener("click", handleCellClick);
+          cell.removeEventListener("click", this.handleCellClick.bind(this));
         });
         return;
       }
-      currentPlayer = currentPlayer === player1 ? player2 : player1;
-      rounds++;
-      if (rounds === 9) {
+      this.currentPlayer =
+        this.currentPlayer === this.player1 ? this.player2 : this.player1;
+      this.rounds++;
+      if (this.rounds === 9) {
         setTimeout(() => {
           alert("Game Over! It's a draw.");
           console.log("Game Over! It's a draw.");
         }, 0);
         document.querySelectorAll(".game-cell").forEach((cell) => {
-          cell.removeEventListener("click", handleCellClick);
+          cell.removeEventListener("click", this.handleCellClick.bind(this));
         });
       }
     }
   }
 
-  function startGame() {
-    gameboard.resetBoard();
-    gameboard.displayBoard();
-    initializePlayers();
-    rounds = 0;
+  startGame() {
+    this.gameboard.resetBoard();
+    this.gameboard.displayBoard();
+    this.initializePlayers();
+    this.rounds = 0;
     document.querySelectorAll(".game-cell").forEach((cell) => {
-      cell.addEventListener("click", handleCellClick);
+      cell.addEventListener("click", this.handleCellClick.bind(this));
     });
   }
 
-  function restartGame() {
-    startGame();
+  restartGame() {
+    this.startGame();
   }
-
-  return {
-    startGame,
-    restartGame,
-  };
-})();
+}
 
 // Start the game
 document.addEventListener("DOMContentLoaded", () => {
+  const gameController = new GameController();
   gameController.startGame();
   document
     .getElementById("restart-button")
-    .addEventListener("click", gameController.restartGame);
+    .addEventListener("click", gameController.restartGame.bind(gameController));
 });
